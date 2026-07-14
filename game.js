@@ -13,83 +13,101 @@ const STORAGE_PREFIX = "caribbean-danger-slot-";
 
 const HARBORS = {
   "San Juan": {
-    world: { x: 3, y: 9 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: 0, y: 0 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["wood", "grain"],
     harborAmbience: "sounds/harbors/san_juan.wav",
     townAmbience: "sounds/harbors/town_san_juan.wav"
   },
   "Puerto Plata": {
-    world: { x: 0, y: 10 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: 0, y: 8 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["tobacco", "rum"],
     harborAmbience: "sounds/harbors/puerto_plata.wav"
   },
   Princapolca: {
-    world: { x: 8, y: 2 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: 5, y: -7 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["tobacco", "grain"],
     harborAmbience: "sounds/harbors/princapolca.wav"
   },
   Cartagena: {
-    world: { x: 7, y: 0 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: 0, y: -8 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["rum", "tobacco"],
     harborAmbience: "sounds/harbors/cartagena.wav"
   },
   Curacao: {
-    world: { x: 8, y: 0 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: -4, y: -7 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["grain", "rum"],
     harborAmbience: "sounds/harbors/curacao.wav"
   },
   Kingstown: {
-    world: { x: 9, y: 0 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: -7, y: -4 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["grain", "wood"],
     harborAmbience: "sounds/harbors/kingstown.wav"
   },
   Camarco: {
-    world: { x: -6, y: 3 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: -8, y: 0 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["wood", "rum"],
     harborAmbience: "sounds/harbors/camarco.wav"
   },
   "Spring Point": {
-    world: { x: -2, y: 9 },
-    dock: { x: 2, y: 12 },
-    mooring: { x: 2, y: 11 },
+    world: { x: -7, y: 5 },
+    dock: { x: 0, y: 8 },
+    mooring: { x: 0, y: 7 },
     soldGoods: ["wood", "tobacco"],
     harborAmbience: "sounds/harbors/spring_point.wav"
   }
 };
 
-const HARBOR_ZONES = [
-  { id: "dock", x: 2, y: 12, radius: 2, label: "Gangplank and dock entrance" },
+const HARBOR_COMMON_ZONES = [
+  { id: "dock", x: 0, y: 8, radius: 2, label: "Gangplank and dock entrance" },
   { id: "town", x: 8, y: 10, radius: 3, label: "Town approach" },
   { id: "merchant", x: 10, y: 15, radius: 2, label: "Merchant" },
   { id: "tavern", x: 10, y: 20, radius: 2, label: "Tavern" },
-  { id: "goods", x: -6, y: 4, radius: 2, label: "Goods crates" },
   { id: "shipyard", x: 15, y: 25, radius: 2, label: "Shipyard" },
   { id: "mission", x: 40, y: 45, radius: 2, label: "Mission hut" },
   { id: "treasure", x: 20, y: 40, radius: 2, label: "Treasure location" }
 ];
 
-const SHIP_ZONES = [
+function getHarborZones(harbor) {
+  const soldGoods = HARBORS[harbor].soldGoods;
+
+  return [
+    ...HARBOR_COMMON_ZONES,
+    { id: `goods-${soldGoods[0]}`, x: -6, y: 4, radius: 0.4, label: soldGoods[0], good: soldGoods[0] },
+    { id: `goods-${soldGoods[1]}`, x: -5, y: 4, radius: 0.4, label: soldGoods[1], good: soldGoods[1] },
+    { id: "goodsApproach", x: -6, y: 5, radius: 2, label: "Crates with goods" }
+  ];
+}
+
+const SHIP_DECK_ZONES = [
   { id: "wheel", x: 2, y: 1, radius: 1, label: "Captain's wheel" },
-  { id: "mast", x: 2, y: 4, radius: 1, label: "Main mast" },
-  { id: "cargo", x: 2, y: 7, radius: 1, label: "Cargo hatch" },
+  { id: "mast", x: 1, y: 3, radius: 0.4, label: "Main mast" },
+  { id: "cargoHatch", x: 3, y: 8, radius: 0.4, label: "stairs to cargo hatch" },
   { id: "crew", x: 2, y: 9, radius: 1, label: "Crew area" },
-  { id: "gangplank", x: 2, y: 11, radius: 1, label: "Ship gangplank" },
-  { id: "deck", x: 2, y: 6, radius: 4, label: "Main deck" }
+  { id: "gangplank", x: 2, y: 11, radius: 1, label: "Ship gangplank" }
 ];
+
+const SHIP_HOLD_ZONES = [
+  { id: "cargoHatch", x: 3, y: 9, box: { minX: 3, maxX: 3, minY: 8, maxY: 10 }, label: "stairs to cargo hatch" },
+  { id: "cargoHold", x: 1.5, y: 9.5, box: { minX: 0, maxX: 3, minY: 8, maxY: 11 }, label: "cargo hold" }
+];
+
+function getShipZones(shipLevel) {
+  return shipLevel === "hold" ? SHIP_HOLD_ZONES : SHIP_DECK_ZONES;
+}
 
 class AmbientManager {
   constructor(context) {
@@ -119,25 +137,27 @@ class AmbientManager {
   }
 
   async fetchAudioArrayBuffer(path) {
+    const encodedPath = encodeURI(path);
+
     try {
-      const response = await fetch(path);
+      const response = await fetch(encodedPath);
       if (!response.ok) {
-        throw new Error(`Fetch failed for ${path}`);
+        throw new Error(`Fetch failed for ${encodedPath}`);
       }
       return await response.arrayBuffer();
     } catch (error) {
       return await new Promise((resolve, reject) => {
         const req = new XMLHttpRequest();
-        req.open("GET", path, true);
+        req.open("GET", encodedPath, true);
         req.responseType = "arraybuffer";
         req.onload = () => {
           if (req.status === 200 || req.status === 0) {
             resolve(req.response);
           } else {
-            reject(new Error(`XHR failed for ${path}`));
+            reject(new Error(`XHR failed for ${encodedPath}`));
           }
         };
-        req.onerror = () => reject(new Error(`XHR error for ${path}`));
+        req.onerror = () => reject(new Error(`XHR error for ${encodedPath}`));
         req.send();
       });
     }
@@ -145,6 +165,11 @@ class AmbientManager {
 
   async playLoop(key, path, gainValue = 0.45) {
     if (!path) {
+      return;
+    }
+    const activeTrack = this.active.get(key);
+    if (activeTrack && activeTrack.path === path) {
+      this.setGain(key, gainValue, 0.1);
       return;
     }
     const buffer = await this.load(path);
@@ -165,11 +190,16 @@ class AmbientManager {
     gain.connect(this.master);
 
     source.start();
-    this.active.set(key, { source, gain });
+    this.active.set(key, { source, gain, path });
   }
 
   async crossfade(key, path, targetGain = 0.45, time = 1.2) {
     const oldTrack = this.active.get(key);
+    if (oldTrack && oldTrack.path === path) {
+      this.setGain(key, targetGain, Math.max(0.05, time * 0.5));
+      return;
+    }
+
     const buffer = await this.load(path);
     if (!buffer) {
       return;
@@ -194,7 +224,18 @@ class AmbientManager {
       oldTrack.source.stop(now + time + 0.05);
     }
 
-    this.active.set(key, { source, gain });
+    this.active.set(key, { source, gain, path });
+  }
+
+  setGain(key, gainValue, time = 0.15) {
+    const track = this.active.get(key);
+    if (!track) {
+      return;
+    }
+
+    const now = this.context.currentTime;
+    track.gain.gain.cancelScheduledValues(now);
+    track.gain.gain.linearRampToValueAtTime(gainValue, now + time);
   }
 
   stop(key) {
@@ -208,6 +249,49 @@ class AmbientManager {
       // no-op if already stopped
     }
     this.active.delete(key);
+  }
+}
+
+class FootstepManager {
+  constructor(context, loader) {
+    this.context = context;
+    this.loader = loader;
+    this.master = this.context.createGain();
+    this.master.gain.value = 1;
+    this.master.connect(this.context.destination);
+    this.lastStepAt = 0;
+  }
+
+  setMasterGain(value, time = 0.12) {
+    const now = this.context.currentTime;
+    this.master.gain.cancelScheduledValues(now);
+    this.master.gain.linearRampToValueAtTime(this.clamp(value, 0, 1), now + time);
+  }
+
+  async playSample(path, gainValue = 0.14, minIntervalMs = 170) {
+    const nowMs = performance.now();
+    if (nowMs - this.lastStepAt < minIntervalMs) {
+      return true;
+    }
+
+    const buffer = await this.loader(path);
+    if (!buffer) {
+      return false;
+    }
+
+    const source = this.context.createBufferSource();
+    const gain = this.context.createGain();
+    source.buffer = buffer;
+    gain.gain.value = gainValue;
+    source.connect(gain);
+    gain.connect(this.master);
+    source.start();
+    this.lastStepAt = nowMs;
+    return true;
+  }
+
+  clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
   }
 }
 
@@ -257,6 +341,7 @@ class CaribbeanDanger {
     this.audioContext = null;
     this.ambientManager = null;
     this.combatManager = null;
+    this.footstepManager = null;
     this.panningManager = new PanningManager();
 
     this.ui = {
@@ -285,6 +370,23 @@ class CaribbeanDanger {
     this.menuItems = [];
     this.activeSaveSlot = 1;
     this.hasAudioLoadWarning = false;
+    this.currentShipAmbiencePath = null;
+    this.lastZoneKey = null;
+    this.lastNamedZone = {
+      id: "wheel",
+      name: "Captain's wheel",
+      scene: "ship",
+      shipLevel: "deck"
+    };
+    this.pendingLoadSelection = null;
+    this.arrowKeyTimes = {
+      arrowup: 0,
+      arrowdown: 0,
+      arrowleft: 0,
+      arrowright: 0,
+      pageup: 0,
+      pagedown: 0
+    };
 
     this.state = this.freshState();
     this.bindInput();
@@ -301,10 +403,13 @@ class CaribbeanDanger {
       menuIndex: 0,
       location: {
         scene: "ship",
+        shipLevel: "deck",
         currentHarbor: "San Juan",
         x: 2,
         y: 1,
-        zone: "wheel"
+        zone: "wheel",
+        zoneLabel: "Captain's wheel",
+        zoneData: null
       },
       destinationSelectionIndex: 0,
       sea: {
@@ -365,8 +470,12 @@ class CaribbeanDanger {
   bindInput() {
     document.addEventListener("keydown", async (event) => {
       const key = event.key.toLowerCase();
-      if (["arrowup", "arrowdown", "arrowleft", "arrowright", "enter", "b", "c", "g", "t", "v", "escape"].includes(key)) {
+      if (["arrowup", "arrowdown", "arrowleft", "arrowright", "pageup", "pagedown", "enter", "b", "c", "d", "g", "p", "t", "v", "escape"].includes(key)) {
         event.preventDefault();
+      }
+
+      if ((key === "arrowup" || key === "arrowdown" || key === "pageup" || key === "pagedown") && !this.allowArrowStep(key, event.repeat)) {
+        return;
       }
 
       if (this.state.mode === "menu") {
@@ -379,6 +488,25 @@ class CaribbeanDanger {
       }
 
       await this.ensureAudioSafe();
+
+      if (this.pendingLoadSelection) {
+        if (key === "arrowup") {
+          this.adjustLoadSelection(1);
+          return;
+        }
+        if (key === "arrowdown") {
+          this.adjustLoadSelection(-1);
+          return;
+        }
+        if (key === "enter") {
+          this.confirmLoadSelection();
+          return;
+        }
+        if (key === "escape") {
+          this.cancelLoadSelection();
+          return;
+        }
+      }
 
       if (this.state.inPanel === "trade" || this.state.inPanel === "sail" || this.state.inPanel === "save") {
         if (key === "arrowup") {
@@ -393,6 +521,12 @@ class CaribbeanDanger {
           this.activateCurrentOption();
           return;
         }
+        return;
+      }
+
+      if (key === "pageup" || key === "pagedown") {
+        await this.movePlayer(key);
+        return;
       }
 
       if (key === "b") {
@@ -405,8 +539,18 @@ class CaribbeanDanger {
         return;
       }
 
+      if (key === "d" && this.state.sea.inProgress) {
+        this.speakAndLog(this.describeSeaDistance());
+        return;
+      }
+
       if (key === "g") {
-        this.speakAndLog(`Gold ${this.state.player.gold}.`);
+        this.speakAndLog(`${this.state.player.gold} gold.`);
+        return;
+      }
+
+      if (key === "p") {
+        this.speakAndLog(`${this.state.player.victoryPoints} victory points.`);
         return;
       }
 
@@ -425,7 +569,7 @@ class CaribbeanDanger {
       }
 
       if (key.startsWith("arrow")) {
-        this.movePlayer(key);
+        await this.movePlayer(key);
         return;
       }
 
@@ -456,14 +600,22 @@ class CaribbeanDanger {
     this.audioContext = new Ctx();
     this.ambientManager = new AmbientManager(this.audioContext);
     this.combatManager = new CombatManager(this.audioContext, this.ambientManager);
+    this.footstepManager = new FootstepManager(this.audioContext, (path) => this.ambientManager.load(path));
 
-    await this.ambientManager.playLoop("ship", "sounds/ship/creaking_ship.wav", 0.22);
+    await this.updateShipAmbienceForLocation();
     await this.updateAmbienceForLocation();
 
     if (this.audioContext.state === "suspended") {
       await this.audioContext.resume();
     }
     this.log("Audio engine ready.");
+  }
+
+  setFootstepsVolume(value) {
+    if (!this.footstepManager) {
+      return;
+    }
+    this.footstepManager.setMasterGain(value);
   }
 
   async ensureAudioSafe() {
@@ -532,6 +684,10 @@ class CaribbeanDanger {
     this.activeSaveSlot = slot;
     this.state = this.freshState();
     this.state.mode = "playing";
+    this.lastZoneKey = null;
+    this.transitionSpeech = null;
+    this.transitionSpeechSourceKey = null;
+    this.pendingLoadSelection = null;
     this.ui.menuPanel.classList.add("hidden");
     this.ui.gamePanel.classList.remove("hidden");
     this.ui.zonePanel.classList.remove("hidden");
@@ -566,6 +722,7 @@ class CaribbeanDanger {
 
   quitGame() {
     this.state.mode = "quit";
+    this.pendingLoadSelection = null;
     this.renderMenuButtons([
       { label: "Return to Main Menu", click: () => this.renderMenu() }
     ], this.ui.mainMenuButtons);
@@ -581,9 +738,16 @@ class CaribbeanDanger {
     }
 
     this.state = data;
+    if (!this.state.location.shipLevel) {
+      this.state.location.shipLevel = "deck";
+    }
     this.state.mode = "playing";
     this.state.inPanel = null;
     this.activeSaveSlot = slot;
+    this.lastZoneKey = null;
+    this.transitionSpeech = null;
+    this.transitionSpeechSourceKey = null;
+    this.pendingLoadSelection = null;
 
     this.ui.menuPanel.classList.add("hidden");
     this.ui.gamePanel.classList.remove("hidden");
@@ -619,13 +783,70 @@ class CaribbeanDanger {
     }
   }
 
-  movePlayer(key) {
+  async movePlayer(key) {
+    if (this.state.location.scene === "ship" && key === "pagedown") {
+      if (
+        this.state.location.shipLevel === "deck"
+        && (
+          this.state.location.zone === "cargoHatch"
+          || (this.state.location.x === 3 && this.state.location.y === 7)
+        )
+      ) {
+        this.state.location.shipLevel = "hold";
+        this.state.location.x = 3;
+        this.state.location.y = 8;
+        this.updateZone();
+        this.updateStatus();
+        this.updateGoodsPanel();
+        this.updateShipAmbienceForLocation();
+        await this.playFootstep("plank");
+      } else if (this.state.location.shipLevel === "hold" && this.state.location.x === 3 && this.state.location.y < 11) {
+        this.state.location.y += 1;
+        this.updateZone();
+        this.updateStatus();
+        this.updateGoodsPanel();
+        this.updateShipAmbienceForLocation();
+        await this.playFootstep("plank");
+        if (this.state.location.y === 11) {
+          this.announce("cargo hold");
+        }
+      }
+      return;
+    }
+
+    if (this.state.location.scene === "ship" && key === "pageup") {
+      if (this.state.location.shipLevel === "hold" && this.state.location.x === 3 && this.state.location.y > 8) {
+        this.state.location.y -= 1;
+        this.updateZone();
+        this.updateStatus();
+        this.updateGoodsPanel();
+        this.updateShipAmbienceForLocation();
+        await this.playFootstep("plank");
+      } else if (
+        this.state.location.shipLevel === "hold"
+        && this.state.location.x === 3
+        && this.state.location.y === 8
+        && (this.state.location.zone === "cargoHatch" || this.state.location.zone === "cargoHold")
+      ) {
+        this.state.location.shipLevel = "deck";
+        this.state.location.x = 3;
+        this.state.location.y = 7;
+        this.updateZone();
+        this.updateStatus();
+        this.updateGoodsPanel();
+        this.updateShipAmbienceForLocation();
+        await this.playFootstep("plank");
+        this.announce("main deck");
+      }
+      return;
+    }
+
     const delta = { x: 0, y: 0 };
     if (key === "arrowup") {
-      delta.y += 1;
+      delta.y -= 1;
     }
     if (key === "arrowdown") {
-      delta.y -= 1;
+      delta.y += 1;
     }
     if (key === "arrowleft") {
       delta.x -= 1;
@@ -634,11 +855,26 @@ class CaribbeanDanger {
       delta.x += 1;
     }
 
+    if (this.state.location.scene === "ship" && (key === "arrowup" || key === "arrowdown")) {
+      if (this.state.location.shipLevel === "hold") {
+        if (this.state.location.zone === "cargoHatch") {
+          return;
+        }
+      }
+    }
+
+    if ((key === "pageup" || key === "pagedown") && this.state.location.scene !== "ship") {
+      return;
+    }
+
     const movingSouth = delta.y > 0;
+    const movingNorth = delta.y < 0;
 
     const bounds = this.state.location.scene === "harbor"
       ? { minX: -25, maxX: 24, minY: -25, maxY: 24 }
-      : { minX: 0, maxX: 3, minY: 0, maxY: 11 };
+      : (this.state.location.shipLevel === "hold"
+        ? { minX: 0, maxX: 3, minY: 8, maxY: 11 }
+        : { minX: 0, maxX: 3, minY: 0, maxY: 11 });
 
     if (
       this.state.location.scene === "ship"
@@ -648,42 +884,113 @@ class CaribbeanDanger {
     ) {
       const harborData = HARBORS[this.state.location.currentHarbor];
       this.state.location.scene = "harbor";
+      this.state.location.shipLevel = "deck";
       this.state.location.x = harborData.dock.x;
       this.state.location.y = harborData.dock.y;
       this.updateZone();
       this.updateStatus();
-      this.playFootstep();
+      this.playFootstep("plank");
       this.speakAndLog(`Entering ${this.state.location.currentHarbor} dock.`);
       return;
     }
 
+    const harborData = HARBORS[this.state.location.currentHarbor];
+    const atHarborDock = this.state.location.scene === "harbor"
+      && this.distance(this.state.location, harborData.dock) <= 2.05;
+
+    if (
+      atHarborDock
+      && movingNorth
+      && !this.state.sea.inProgress
+    ) {
+      this.state.location.scene = "ship";
+      this.state.location.shipLevel = "deck";
+      this.state.location.x = 2;
+      this.state.location.y = 11;
+      this.updateZone();
+      this.updateStatus();
+      this.updateGoodsPanel();
+      this.updateShipAmbienceForLocation();
+      await this.playFootstep("plank");
+      this.log("You return to your ship.");
+      return;
+    }
+
+    const previousX = this.state.location.x;
+    const previousY = this.state.location.y;
+    const previousShipY = this.state.location.y;
+
     this.state.location.x = this.clamp(this.state.location.x + delta.x, bounds.minX, bounds.maxX);
     this.state.location.y = this.clamp(this.state.location.y + delta.y, bounds.minY, bounds.maxY);
+
+    const moved = this.state.location.x !== previousX || this.state.location.y !== previousY;
+    if (!moved) {
+      return;
+    }
 
     this.updateZone();
     this.updateStatus();
     this.updateGoodsPanel();
-    this.playFootstep();
+    this.updateShipAmbienceForLocation();
+    const shipStepSurface = this.state.location.scene === "ship"
+      ? ((previousShipY >= 8 || this.state.location.y >= 8) ? "plank" : "deck")
+      : null;
+    await this.playFootstep(shipStepSurface);
   }
 
   updateZone() {
-    const zones = this.state.location.scene === "harbor" ? HARBOR_ZONES : SHIP_ZONES;
+    const zones = this.state.location.scene === "harbor"
+      ? getHarborZones(this.state.location.currentHarbor)
+      : getShipZones(this.state.location.shipLevel);
     let nearest = null;
     for (const zone of zones) {
-      const d = this.distance(this.state.location, zone);
-      if (d <= zone.radius) {
+      const inBox = zone.box
+        ? this.state.location.x >= zone.box.minX
+          && this.state.location.x <= zone.box.maxX
+          && this.state.location.y >= zone.box.minY
+          && this.state.location.y <= zone.box.maxY
+        : false;
+      const d = zone.box ? 0 : this.distance(this.state.location, zone);
+      if (inBox || (zone.radius && d <= zone.radius)) {
         nearest = zone;
         break;
       }
     }
 
     this.state.location.zone = nearest ? nearest.id : "open";
+    this.state.location.zoneLabel = nearest ? nearest.label : "Open area";
+    this.state.location.zoneData = nearest;
+
+    if (this.state.location.zone !== "open") {
+      const explicitName = this.getZoneSpeechText() || this.state.location.zoneLabel;
+      this.lastNamedZone = {
+        id: this.state.location.zone,
+        name: explicitName,
+        scene: this.state.location.scene,
+        shipLevel: this.state.location.shipLevel
+      };
+    }
+
+    const currentZoneKey = `${this.state.location.scene}:${this.state.location.zone}`;
+    const currentZoneSpeech = this.getZoneSpeechText();
+    const previousZoneSpeech = this.getPreviousZoneSpeechText();
+
+    if (this.lastZoneKey !== null && this.lastZoneKey !== currentZoneKey) {
+      if (previousZoneSpeech) {
+        this.announce(`leaving ${previousZoneSpeech}.`);
+      }
+      if (currentZoneSpeech) {
+        this.announce(`${currentZoneSpeech}.`);
+      }
+    }
+
+    this.lastZoneKey = currentZoneKey;
 
     const locationName = this.state.location.scene === "harbor"
       ? `${this.state.location.currentHarbor} harbor`
       : (this.state.sea.inProgress ? "ship at sea" : `ship docked at ${this.state.location.currentHarbor}`);
 
-    const zoneLine = nearest ? nearest.label : "Open area";
+    const zoneLine = this.state.location.zoneLabel;
     this.ui.zoneText.innerHTML = [
       `<strong>Area:</strong> ${locationName}<br>`,
       `<strong>Zone:</strong> ${zoneLine}<br>`,
@@ -691,14 +998,18 @@ class CaribbeanDanger {
     ].join("");
 
     this.updateAmbienceForLocation();
+    this.updateShipAmbienceForLocation();
   }
 
   interactWithZone() {
     const zone = this.state.location.zone;
     const harborData = HARBORS[this.state.location.currentHarbor];
+    const atHarborDock = this.state.location.scene === "harbor"
+      && this.distance(this.state.location, harborData.dock) <= 2.05;
 
     if (this.state.location.scene === "ship" && zone === "gangplank" && !this.state.sea.inProgress) {
       this.state.location.scene = "harbor";
+      this.state.location.shipLevel = "deck";
       this.state.location.x = harborData.dock.x;
       this.state.location.y = harborData.dock.y;
       this.updateZone();
@@ -708,8 +1019,9 @@ class CaribbeanDanger {
       return;
     }
 
-    if (this.state.location.scene === "harbor" && zone === "dock") {
+    if (this.state.location.scene === "harbor" && (zone === "dock" || atHarborDock)) {
       this.state.location.scene = "ship";
+      this.state.location.shipLevel = "deck";
       this.state.location.x = 2;
       this.state.location.y = 11;
       this.updateZone();
@@ -738,8 +1050,23 @@ class CaribbeanDanger {
       return;
     }
 
-    if (this.state.location.scene === "harbor" && zone === "goods") {
-      this.log("Crates are stacked here. Trade through the merchant to load cargo.");
+    if (this.state.location.scene === "harbor" && zone === "goodsApproach") {
+      this.announce("Crates with goods.");
+      return;
+    }
+
+    if (this.state.location.scene === "harbor" && this.state.location.zoneData && this.state.location.zoneData.good) {
+      this.loadGoodFromCrates(this.state.location.zoneData.good);
+      return;
+    }
+
+    if (this.state.location.scene === "ship" && zone === "cargoHold") {
+      if (this.state.sea.inProgress || this.currentCargoLoad() <= 0) {
+        this.announce("no goods loaded yet.");
+        return;
+      }
+
+      this.openTradePanel();
     }
   }
 
@@ -750,19 +1077,19 @@ class CaribbeanDanger {
 
     const harbor = this.state.location.currentHarbor;
     const soldGoods = HARBORS[harbor].soldGoods;
+    const cargoLoad = this.currentCargoLoad();
+    const cargoCap = this.totalCargoCapacity();
+    const cargoSpace = Math.max(0, cargoCap - cargoLoad);
 
     this.ui.tradeInfo.innerHTML = [
       `<strong>Harbor:</strong> ${harbor}<br>`,
       `<strong>Sold Here:</strong> ${soldGoods.join(", ")}<br>`,
+      `<strong>Cargo Capacity:</strong> ${cargoLoad} / ${cargoCap} (${cargoSpace} free)<br>`,
+      `<strong>Loading:</strong> Go to the crates with the specific good.<br>`,
       `<strong>Special Event:</strong> ${this.state.specialEvent || "none"}`
     ].join("");
 
     this.ui.tradeActions.innerHTML = "";
-
-    soldGoods.forEach((good) => {
-      const buyPrice = this.calculateBuyPrice(harbor, good);
-      this.ui.tradeActions.appendChild(this.makeOptionRow(`Buy ${good} (${buyPrice} gold)`, () => this.buyGood(good), false));
-    });
 
     GOODS.forEach((good) => {
       const qty = this.state.player.cargo[good];
@@ -818,28 +1145,88 @@ class CaribbeanDanger {
     this.updateStatus();
   }
 
-  buyGood(good) {
+  loadGoodFromCrates(good) {
     const harbor = this.state.location.currentHarbor;
-    const price = this.calculateBuyPrice(harbor, good);
-    const cargoSpace = this.totalCargoCapacity() - this.currentCargoLoad();
+    if (!HARBORS[harbor].soldGoods.includes(good)) {
+      this.log(`${good} is not sold at ${harbor}.`);
+      return;
+    }
 
-    if (cargoSpace <= 0) {
+    if (this.state.location.scene !== "harbor") {
+      this.log(`Move to the crates for ${good}.`);
+      return;
+    }
+
+    const zone = this.state.location.zoneData;
+    if (!zone || zone.good !== good) {
+      this.log(`Move onto the ${good} crate to load it.`);
+      return;
+    }
+
+    const price = this.calculateBuyPrice(harbor, good);
+    const maxQuantity = this.maxPurchasableQuantity(good, price);
+
+    if (maxQuantity <= 0) {
       this.log("Cargo hold is full.");
       return;
     }
 
-    if (this.state.player.gold < price) {
-      this.log("Not enough gold.");
+    this.pendingLoadSelection = {
+      good,
+      harbor,
+      price,
+      maxQuantity,
+      quantity: Math.max(1, Math.min(maxQuantity, 1))
+    };
+
+    this.announceHint(`Loading ${good} crates. Use up and down arrows to choose how many to load, from 1 to ${maxQuantity}. Enter confirms. Escape cancels.`);
+    this.announce(`${good} crates. ${this.pendingLoadSelection.quantity} selected of ${maxQuantity}.`);
+    this.log(`Loading ${good} crates. Choose quantity with up and down arrows.`);
+  }
+
+  adjustLoadSelection(delta) {
+    if (!this.pendingLoadSelection) {
       return;
     }
 
-    this.state.player.gold -= price;
-    this.state.player.cargo[good] += 1;
+    const nextQuantity = this.clamp(this.pendingLoadSelection.quantity + delta, 1, this.pendingLoadSelection.maxQuantity);
+    this.pendingLoadSelection.quantity = nextQuantity;
+    this.announce(`${this.pendingLoadSelection.good} crates. ${nextQuantity} selected of ${this.pendingLoadSelection.maxQuantity}.`);
+  }
 
-    this.log(`Bought 1 ${good} for ${price} gold.`);
+  confirmLoadSelection() {
+    if (!this.pendingLoadSelection) {
+      return;
+    }
+
+    const selection = this.pendingLoadSelection;
+    const totalPrice = selection.price * selection.quantity;
+
+    if (this.state.player.gold < totalPrice) {
+      this.announce("Not enough gold.");
+      this.pendingLoadSelection = null;
+      return;
+    }
+
+    this.state.player.gold -= totalPrice;
+    this.state.player.cargo[selection.good] += selection.quantity;
+    this.pendingLoadSelection = null;
+
+    this.log(`Loaded ${selection.quantity} ${selection.good} for ${totalPrice} gold.`);
+    this.announce(`Loaded ${selection.quantity} ${selection.good}.`);
     this.updateStatus();
     this.updateGoodsPanel();
-    this.openTradePanel();
+    this.updateZone();
+  }
+
+  cancelLoadSelection() {
+    if (!this.pendingLoadSelection) {
+      return;
+    }
+
+    const good = this.pendingLoadSelection.good;
+    this.pendingLoadSelection = null;
+    this.announce(`Cancelled loading ${good}.`);
   }
 
   sellGood(good) {
@@ -892,51 +1279,32 @@ class CaribbeanDanger {
     this.state.inPanel = "sail";
     this.ui.sailPanel.classList.remove("hidden");
 
-    const harbors = Object.keys(HARBORS).filter((h) => h !== this.state.location.currentHarbor);
-    if (this.state.destinationSelectionIndex >= harbors.length) {
-      this.state.destinationSelectionIndex = 0;
-    }
-
-    const selected = harbors[this.state.destinationSelectionIndex];
-    const miles = this.routeDistance(this.state.location.currentHarbor, selected).toFixed(1);
-    const heading = this.routeHeading(this.state.location.currentHarbor, selected);
-
+    const harbors = this.getAvailableDestinations(this.state.location.currentHarbor);
     this.ui.sailInfo.innerHTML = [
       `<strong>From:</strong> ${this.state.location.currentHarbor}<br>`,
-      `<strong>Destination:</strong> ${selected}<br>`,
-      `<strong>Heading:</strong> ${heading}<br>`,
-      `<strong>Distance:</strong> ${miles} nautical miles`
+      `<strong>Choose Destination:</strong> Use up and down arrows, then Enter.<br>`,
+      `<strong>Available Harbors:</strong> ${harbors.length}`
     ].join("");
 
     this.ui.sailActions.innerHTML = "";
-    this.ui.sailActions.appendChild(this.makeOptionRow("Previous destination", () => {
-      this.state.destinationSelectionIndex = (this.state.destinationSelectionIndex + harbors.length - 1) % harbors.length;
-      this.openSailPanel();
-    }, false));
-
-    this.ui.sailActions.appendChild(this.makeOptionRow("Next destination", () => {
-      this.state.destinationSelectionIndex = (this.state.destinationSelectionIndex + 1) % harbors.length;
-      this.openSailPanel();
-    }, false));
-
-    this.ui.sailActions.appendChild(this.makeOptionRow("Set sail", () => this.beginVoyage(selected), false));
-    this.ui.sailActions.appendChild(this.makeOptionRow("Leave wheel", () => this.closePanels(), false));
-
-    this.capturePanelOptions(this.ui.sailActions);
+    this.renderMenuButtons([
+      ...harbors.map((harbor) => {
+        const miles = this.routeDistance(this.state.location.currentHarbor, harbor).toFixed(1);
+        const heading = this.routeClockDirection(this.state.location.currentHarbor, harbor);
+        return {
+          label: `${harbor}. ${heading}. ${miles} nautical miles.`,
+          click: () => this.beginVoyage(harbor)
+        };
+      }),
+      { label: "Leave wheel", click: () => this.closePanels() }
+    ], this.ui.sailActions);
   }
 
   beginVoyage(destination) {
     const from = this.state.location.currentHarbor;
     const miles = this.routeDistance(from, destination);
-
-    const cargoWeightFactor = 1 - (this.currentCargoLoad() / Math.max(1, this.totalCargoCapacity())) * 0.25;
-    const sailFactor = this.state.player.ship.sails / 100;
-    const windFactor = this.rand(0.82, 1.18);
-    const baseKnots = 12;
-    const speedKnots = Math.max(3.2, baseKnots * sailFactor * cargoWeightFactor * windFactor);
-
-    const realHours = miles / speedKnots;
-    const scaledSeconds = Math.max(20, realHours * 3600 * 0.25);
+    const speedKnots = this.computeVoyageSpeed();
+    const travelSeconds = speedKnots > 0 ? miles / speedKnots : miles;
 
     this.state.sea = {
       inProgress: true,
@@ -946,11 +1314,12 @@ class CaribbeanDanger {
       remainingMiles: miles,
       heading: this.routeHeading(from, destination),
       speedKnots,
-      travelSecondsTotal: scaledSeconds,
-      travelSecondsLeft: scaledSeconds
+      travelSecondsTotal: travelSeconds,
+      travelSecondsLeft: travelSeconds
     };
 
     this.state.location.scene = "ship";
+  this.state.location.shipLevel = "deck";
     this.state.location.x = 0;
     this.state.location.y = 9;
     this.closePanels();
@@ -966,15 +1335,18 @@ class CaribbeanDanger {
       return;
     }
 
-    this.state.sea.travelSecondsLeft = Math.max(0, this.state.sea.travelSecondsLeft - seconds);
-    const ratio = 1 - this.state.sea.travelSecondsLeft / this.state.sea.travelSecondsTotal;
-    this.state.sea.remainingMiles = Math.max(0, this.state.sea.totalMiles * (1 - ratio));
+    const currentSpeed = this.computeVoyageSpeed();
+    this.state.sea.speedKnots = currentSpeed;
+    this.state.sea.remainingMiles = Math.max(0, this.state.sea.remainingMiles - currentSpeed * seconds);
+    this.state.sea.travelSecondsLeft = currentSpeed > 0
+      ? this.state.sea.remainingMiles / currentSpeed
+      : this.state.sea.remainingMiles;
 
     if (Math.random() < 0.018 * seconds) {
       this.triggerSeaEvent();
     }
 
-    if (this.state.sea.travelSecondsLeft <= 0) {
+    if (this.state.sea.remainingMiles <= 0) {
       this.arriveAtDestination();
     }
   }
@@ -1025,6 +1397,7 @@ class CaribbeanDanger {
     this.state.sea.inProgress = false;
     this.state.location.currentHarbor = to;
     this.state.location.scene = "ship";
+    this.state.location.shipLevel = "deck";
     this.state.location.x = 0;
     this.state.location.y = 11;
     this.state.lastVisitedHarbor = to;
@@ -1147,23 +1520,84 @@ class CaribbeanDanger {
       return "Open sea";
     }
 
-    const harbor = this.state.location.currentHarbor;
-    const zone = this.state.location.zone;
+    const effectiveZone = this.getEffectiveZoneForSpeech();
+    const zoneName = effectiveZone.name;
+    return `Current location: ${zoneName}.`;
+  }
 
+  describeSeaDistance() {
+    const destination = this.state.sea.to;
+    const bearing = this.routeClockDirection(this.state.sea.from, destination);
+    return `${destination} at ${bearing}, ${this.state.sea.remainingMiles.toFixed(1)} nautical miles away.`;
+  }
+
+  getEffectiveZoneForSpeech() {
+    if (this.state.location.zone !== "open") {
+      return {
+        id: this.state.location.zone,
+        name: this.getZoneSpeechText() || this.state.location.zoneLabel || this.state.location.zone
+      };
+    }
+
+    if (this.state.location.scene === "ship") {
+      return {
+        id: this.state.location.shipLevel === "hold" ? "cargoHold" : "mainDeck",
+        name: this.state.location.shipLevel === "hold" ? "cargo hold" : "main deck"
+      };
+    }
+
+    return {
+      id: "open",
+      name: `${this.state.location.currentHarbor} harbor`
+    };
+  }
+
+  getZoneSpeechText() {
     if (this.state.location.scene === "harbor") {
-      if (zone === "open") {
-        return harbor;
+      if (this.state.location.zone === "goodsApproach") {
+        return "Crates with goods";
       }
-      if (zone === "dock") {
-        return `${harbor} dock`;
+      if (this.state.location.zoneData && this.state.location.zoneData.good) {
+        return `${this.state.location.zoneData.good} crates`;
       }
-      return `${harbor} ${zone}`;
+      return this.state.location.zone === "open" ? null : (this.state.location.zoneLabel || null);
     }
 
-    if (zone === "open") {
-      return "Ship";
+    if (this.state.location.zone === "open") {
+      return null;
     }
-    return `Ship ${zone}`;
+
+    if (this.state.location.zone === "cargoHold") {
+      return "cargo hold";
+    }
+
+    if (this.state.location.zone === "cargoHatch") {
+      return "stairs to cargo hatch";
+    }
+
+    return this.state.location.zoneLabel || null;
+  }
+
+  getPreviousZoneSpeechText() {
+    if (!this.lastZoneKey) {
+      return null;
+    }
+
+    const [scene, zone] = this.lastZoneKey.split(":");
+    if (scene === "harbor") {
+      if (zone === "goodsApproach") {
+        return "Crates with goods";
+      }
+      const harborZones = getHarborZones(this.state.location.currentHarbor);
+      const previousZone = harborZones.find((item) => item.id === zone);
+      if (previousZone && previousZone.good) {
+        return `${previousZone.good} crates`;
+      }
+      return previousZone ? previousZone.label : null;
+    }
+
+    const shipZone = [...SHIP_DECK_ZONES, ...SHIP_HOLD_ZONES].find((item) => item.id === zone);
+    return shipZone ? shipZone.label : null;
   }
 
   updateStatus() {
@@ -1189,6 +1623,9 @@ class CaribbeanDanger {
   updateGoodsPanel() {
     const harbor = this.state.location.currentHarbor;
     const sold = HARBORS[harbor].soldGoods;
+    const cargoLoad = this.currentCargoLoad();
+    const cargoCap = this.totalCargoCapacity();
+    const cargoSpace = Math.max(0, cargoCap - cargoLoad);
 
     const sellLines = GOODS.map((good) => `${good}: ${this.calculateSellPrice(harbor, good)} gold`).join("<br>");
     const buyLines = sold.map((good) => `${good}: ${this.calculateBuyPrice(harbor, good)} gold`).join("<br>");
@@ -1196,7 +1633,8 @@ class CaribbeanDanger {
 
     this.ui.goodsText.innerHTML = [
       `<strong>Harbor Market (${harbor})</strong><br>`,
-      `<strong>Buy:</strong><br>${buyLines || "No local goods listed."}<br><br>`,
+      `<strong>Cargo Space:</strong> ${cargoLoad} / ${cargoCap} (${cargoSpace} free)<br><br>`,
+      `<strong>Load at Crates:</strong><br>${buyLines || "No local goods listed."}<br><br>`,
       `<strong>Sell:</strong><br>${sellLines}<br><br>`,
       `<strong>Your Cargo:</strong><br>${cargoLines}`
     ].join("");
@@ -1268,71 +1706,99 @@ class CaribbeanDanger {
     await this.ambientManager.crossfade("world", "sounds/harbors/shore.wav", 0.18, 1.0);
   }
 
-  async playFootstep() {
-    if (!this.ambientManager || !this.audioContext) {
+  async updateShipAmbienceForLocation() {
+    if (!this.ambientManager) {
       return;
     }
 
-    const surface = this.resolveStepSurface();
+    if (this.state.location.scene !== "ship") {
+      this.currentShipAmbiencePath = null;
+      this.ambientManager.stop("ship");
+      this.ambientManager.stop("ship-hold");
+      return;
+    }
+
+    if (this.state.sea.inProgress) {
+      await this.ambientManager.playLoop("ship", "sounds/ship/on deck.wav", 0.12);
+      this.ambientManager.stop("ship-hold");
+      return;
+    }
+
+    const holdProgress = this.getCargoHoldProgress();
+    const deckGain = holdProgress > 0 ? this.clamp(0.2 - holdProgress * 0.15, 0.04, 0.2) : 0.2;
+    const holdGain = holdProgress > 0 ? this.clamp(holdProgress * 0.24, 0, 0.24) : 0;
+
+    await this.ambientManager.playLoop("ship", "sounds/ship/on deck.wav", deckGain);
+
+    if (holdGain <= 0) {
+      this.ambientManager.stop("ship-hold");
+      return;
+    }
+
+    await this.ambientManager.playLoop("ship-hold", "sounds/ship/creaking_ship.wav", holdGain);
+  }
+
+  async playFootstep(surfaceOverride = null) {
+    if (!this.footstepManager) {
+      return;
+    }
+
+    const surface = surfaceOverride || this.resolveStepSurface();
 
     const pick = (min, max) => Math.floor(this.rand(min, max));
     let path;
+    let minIntervalMs = 170;
 
     if (surface === "deck") {
-      path = `sounds/steps/deck/deck${pick(1, 6)}.wav`;
+      path = `sounds/steps/main deck/main deck${pick(1, 5)}.wav`;
     } else if (surface === "plank") {
       path = `sounds/steps/plank/plankstep${pick(1, 6)}.ogg`;
+      minIntervalMs = 180;
     } else if (surface === "sand") {
       path = `sounds/steps/sand/sand${pick(1, 6)}.wav`;
+      minIntervalMs = 220;
     } else if (surface === "grass") {
       // Grass files are not in the workspace yet; attempt grass path first, then fallback below.
       path = `sounds/steps/grass/grass${pick(1, 6)}.ogg`;
+      minIntervalMs = 210;
     } else {
       path = `sounds/steps/concrete3/concretestep${pick(1, 9)}.ogg`;
+      minIntervalMs = 185;
     }
 
-    let buffer = await this.ambientManager.load(path);
-    if (!buffer && surface === "grass") {
+    let played = await this.footstepManager.playSample(path, 0.14, minIntervalMs);
+    if (!played && surface === "grass") {
       path = `sounds/steps/concrete3/concretestep${pick(1, 9)}.ogg`;
-      buffer = await this.ambientManager.load(path);
+      played = await this.footstepManager.playSample(path, 0.14, 185);
     }
-    if (!buffer) {
+    if (!played) {
       if (!this.hasAudioLoadWarning) {
         this.hasAudioLoadWarning = true;
         this.log(`Audio file could not be loaded: ${path}. Use http://localhost serving to allow sound loading.`);
       }
       return;
     }
-
-    const source = this.audioContext.createBufferSource();
-    const gain = this.audioContext.createGain();
-    source.buffer = buffer;
-    gain.gain.value = 0.14;
-    source.connect(gain);
-    gain.connect(this.audioContext.destination);
-    source.start();
   }
 
   resolveStepSurface() {
     if (this.state.location.scene === "ship") {
-      if (this.state.location.zone === "gangplank") {
-        return "plank";
-      }
-      return "deck";
+      return this.state.location.shipLevel === "hold" ? "plank" : "deck";
     }
 
-    if (this.state.location.zone === "dock") {
-      return "sand";
+    // Harbor rule: only the designated town zone is concrete; all other harbor tiles are sand.
+    if (this.state.location.zone === "town") {
+      return "concrete";
     }
 
-    if (
-      this.state.location.currentHarbor === "San Juan"
-      && (this.state.location.zone === "town" || this.state.location.zone === "merchant" || this.state.location.zone === "tavern")
-    ) {
-      return "grass";
+    return "sand";
+  }
+
+  getCargoHoldProgress() {
+    if (this.state.location.scene !== "ship" || this.state.location.shipLevel !== "hold") {
+      return 0;
     }
 
-    return "concrete";
+    return this.clamp((this.state.location.y - 8) / 3, 0, 1);
   }
 
   speakAndLog(line) {
@@ -1438,7 +1904,24 @@ class CaribbeanDanger {
     this.applyMenuHighlight();
     const selected = this.menuItems[this.state.menuIndex];
     selected.button.focus();
-    this.announceHint(selected.label);
+  }
+
+  allowArrowStep(key, isRepeat = false) {
+    const now = performance.now();
+    const inMenu = this.state.mode === "menu";
+    const inPanel = this.state.mode === "playing" && (this.state.inPanel === "trade" || this.state.inPanel === "sail" || this.state.inPanel === "save");
+    const intervalMs = (inMenu || inPanel) ? 105 : 120;
+
+    if (!isRepeat) {
+      this.arrowKeyTimes[key] = now;
+      return true;
+    }
+
+    if (!this.arrowKeyTimes[key] || now - this.arrowKeyTimes[key] >= intervalMs) {
+      this.arrowKeyTimes[key] = now;
+      return true;
+    }
+    return false;
   }
 
   setOptionDisabled(option, disabled) {
@@ -1510,6 +1993,12 @@ class CaribbeanDanger {
     return this.state.player.ship.cargoBase + this.state.player.ship.cargoBonus;
   }
 
+  maxPurchasableQuantity(good, price) {
+    const cargoSpace = Math.max(0, this.totalCargoCapacity() - this.currentCargoLoad());
+    const goldLimit = Math.floor(this.state.player.gold / price);
+    return Math.max(0, Math.min(cargoSpace, goldLimit));
+  }
+
   currentCargoLoad() {
     return GOODS.reduce((sum, good) => sum + this.state.player.cargo[good], 0);
   }
@@ -1517,7 +2006,41 @@ class CaribbeanDanger {
   routeDistance(from, to) {
     const a = HARBORS[from].world;
     const b = HARBORS[to].world;
-    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2) * 2.2;
+    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+  }
+
+  computeVoyageSpeed() {
+    const baseTilesPerSecond = 2;
+    const cargoWeightFactor = 1 - (this.currentCargoLoad() / Math.max(1, this.totalCargoCapacity())) * 0.25;
+    const sailConditionFactor = this.state.player.ship.sails / 100;
+    return Math.max(0.5, baseTilesPerSecond * cargoWeightFactor * sailConditionFactor);
+  }
+
+  getAvailableDestinations(from) {
+    return Object.keys(HARBORS)
+      .filter((harbor) => harbor !== from)
+      .sort((left, right) => {
+        const leftHour = this.routeClockHour(from, left);
+        const rightHour = this.routeClockHour(from, right);
+        if (leftHour !== rightHour) {
+          return leftHour - rightHour;
+        }
+        return this.routeDistance(from, left) - this.routeDistance(from, right);
+      });
+  }
+
+  routeClockHour(from, to) {
+    const a = HARBORS[from].world;
+    const b = HARBORS[to].world;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const angle = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+    const hour = Math.round(angle / 30) % 12;
+    return hour === 0 ? 12 : hour;
+  }
+
+  routeClockDirection(from, to) {
+    return `${this.routeClockHour(from, to)} o'clock`;
   }
 
   routeHeading(from, to) {
