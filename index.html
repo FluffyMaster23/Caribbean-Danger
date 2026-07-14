@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caribbean Danger</title>
+  <style>
+    :root {
+      --bg-1: #0f2a32;
+      --bg-2: #20424a;
+      --ink: #f3efe2;
+      --muted: #b7c3c7;
+      --panel: rgba(7, 17, 24, 0.78);
+      --line: rgba(188, 210, 212, 0.28);
+      --accent: #ffbf45;
+      --ok: #7fd07f;
+      --warn: #ff8d6d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 18%, rgba(255, 191, 69, 0.16), transparent 30%),
+        radial-gradient(circle at 80% 85%, rgba(141, 200, 219, 0.16), transparent 36%),
+        linear-gradient(155deg, var(--bg-1), var(--bg-2));
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .shell {
+      width: min(1100px, 100%);
+      min-height: min(740px, calc(100vh - 32px));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(8, 18, 24, 0.6);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .left,
+    .right {
+      padding: 18px;
+    }
+
+    .left {
+      border-right: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+    }
+
+    .right {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto auto;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      letter-spacing: 1px;
+      font-size: clamp(1.3rem, 2.8vw, 2rem);
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      padding: 12px;
+    }
+
+    .menu-list,
+    .actions,
+    .slot-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .option-row {
+      border: 1px solid var(--line);
+      background: #16303a;
+      color: var(--ink);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      user-select: none;
+      cursor: default;
+    }
+
+    .option-row.primary {
+      border-color: rgba(255, 191, 69, 0.7);
+      background: #3f341b;
+      color: #fff5db;
+    }
+
+    .option-row[aria-disabled="true"] {
+      opacity: 0.55;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 0.93rem;
+    }
+
+    .mono {
+      font-family: Consolas, Monaco, monospace;
+    }
+
+    .good {
+      color: var(--ok);
+    }
+
+    .bad {
+      color: var(--warn);
+    }
+
+    .log {
+      overflow: auto;
+      max-height: 260px;
+      font-size: 0.93rem;
+      line-height: 1.35;
+    }
+
+    .log p {
+      margin: 0 0 8px;
+      border-bottom: 1px dotted rgba(188, 210, 212, 0.2);
+      padding-bottom: 6px;
+    }
+
+    .zones {
+      line-height: 1.3;
+      font-size: 0.94rem;
+    }
+
+    .tiny {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 980px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .left {
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="srAnnouncer" class="sr-only" role="status" aria-live="assertive" aria-atomic="true"></div>
+  <div id="srHint" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <main class="shell" tabindex="-1" aria-label="Caribbean Danger game interface">
+    <section class="left">
+      <div>
+        <h1>Caribbean Danger</h1>
+        <div class="tiny">Accessible pirate trading prototype</div>
+      </div>
+
+      <div id="menuPanel" class="panel">
+        <h2>Main Menu</h2>
+        <div class="menu-list" id="mainMenuButtons"></div>
+      </div>
+
+      <div id="gamePanel" class="panel hidden">
+        <h2>Captain View</h2>
+        <div class="status-grid" id="statusGrid"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Captain's Log</h2>
+        <div id="log" class="log" role="log" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="right">
+      <div id="zonePanel" class="panel hidden">
+        <h2>Current Zone</h2>
+        <div id="zoneText" class="zones"></div>
+      </div>
+
+      <div id="goodsPanel" class="panel hidden">
+        <h2>Goods</h2>
+        <div id="goodsText" class="zones"></div>
+      </div>
+
+      <div id="tradePanel" class="panel hidden">
+        <h2>Merchant Exchange</h2>
+        <div id="tradeInfo" class="zones"></div>
+        <div class="actions" id="tradeActions"></div>
+      </div>
+
+      <div id="sailPanel" class="panel hidden">
+        <h2>Ship Wheel</h2>
+        <div id="sailInfo" class="zones"></div>
+        <div class="actions" id="sailActions"></div>
+      </div>
+
+      <div id="savePanel" class="panel hidden">
+        <h2>Captain's Log Slots</h2>
+        <div class="slot-list" id="slotActions"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Controls</h2>
+        <div class="zones tiny">
+          Up/Down arrows: Menu navigation<br>
+          In game: Up increases Y, Down decreases Y<br>
+          Left/Right arrows: change X<br>
+          Enter: Interact/Confirm<br>
+          B: Speak current zone<br>
+          C: Speak coordinates<br>
+          G: Speak gold<br>
+          T: Trade at merchant zone<br>
+          V: Save to slot menu<br>
+          Esc: Close open panel / return menu
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
