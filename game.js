@@ -16,16 +16,18 @@ const HARBORS = {
     world: { x: 0, y: 0 },
     dock: { x: 0, y: 8 },
     mooring: { x: 0, y: 7 },
+    town: { x: 9, y: 10},
     soldGoods: ["wood", "grain"],
     harborAmbience: "sounds/harbors/san_juan.wav",
-    townAmbience: "sounds/harbors/town_san_juan.wav"
+    townAmbience: "sounds/harbors/town_san_juan.ogg"
   },
   "Puerto Plata": {
     world: { x: 0, y: 8 },
     dock: { x: 0, y: 8 },
     mooring: { x: 0, y: 7 },
     soldGoods: ["tobacco", "rum"],
-    harborAmbience: "sounds/harbors/puerto_plata.wav"
+    harborAmbience: "sounds/harbors/puerto_plata.wav",
+    townAmbience: "sounds/harbors/town_puerto_plata.ogg"
   },
   Princapolca: {
     world: { x: 5, y: -7 },
@@ -67,28 +69,50 @@ const HARBORS = {
     dock: { x: 0, y: 8 },
     mooring: { x: 0, y: 7 },
     soldGoods: ["wood", "tobacco"],
-    harborAmbience: "sounds/harbors/spring_point.wav"
+    harborAmbience: "sounds/harbors/spring_point.wav",
+    townAmbience: "sounds/harbors/town_spring_point.ogg"
   }
 };
 
 const HARBOR_COMMON_ZONES = [
-  { id: "dock", x: 0, y: 8, radius: 2, label: "Gangplank and dock entrance" },
-  { id: "town", x: 8, y: 10, radius: 3, label: "Town approach" },
+  { id: "dock", x: 0, y: 8, box: { minX: 0, maxX: 20, minY: 8, maxY: 12 }, label: "Gangplank and dock entrance" },
   { id: "merchant", x: 10, y: 15, radius: 2, label: "Merchant" },
   { id: "tavern", x: 10, y: 20, radius: 2, label: "Tavern" },
   { id: "shipyard", x: 15, y: 25, radius: 2, label: "Shipyard" },
   { id: "mission", x: 40, y: 45, radius: 2, label: "Mission hut" },
-  { id: "treasure", x: 20, y: 40, radius: 2, label: "Treasure location" }
+  { id: "treasure", x: 20, y: 40, radius: 2, label: "Treasure location" },
+  { id: "town", x: 9, y: 10, box: { minX: 9, maxX: 80, minY: 10, maxY: 80 }, label: "Town approach" }
 ];
 
-function getHarborZones(harbor) {
+const HARBOR_GOOD_CRATE_POSITIONS = {
+  grain: -8,
+  wood: -7,
+  tobacco: -6,
+  rum: -5
+};
+
+function getHarborZones(harbor, freshCrates = {}) {
   const soldGoods = HARBORS[harbor].soldGoods;
+  const harborFreshCrates = freshCrates[harbor] || {};
+  const baseZones = harbor === "San Juan"
+    ? HARBOR_COMMON_ZONES.filter((zone) => zone.id !== "merchant")
+    : HARBOR_COMMON_ZONES;
+  const goodZones = GOODS.map((good) => ({
+    id: `goods-${good}`,
+    x: HARBOR_GOOD_CRATE_POSITIONS[good],
+    y: 4,
+    radius: 0.4,
+    label: soldGoods.includes(good)
+      ? `${good} crate`
+      : (harborFreshCrates[good] ? `fresh ${good} crate` : `empty ${good} crate`),
+    good,
+    sellsHere: soldGoods.includes(good)
+  }));
 
   return [
-    ...HARBOR_COMMON_ZONES,
-    { id: `goods-${soldGoods[0]}`, x: -6, y: 4, radius: 0.4, label: soldGoods[0], good: soldGoods[0] },
-    { id: `goods-${soldGoods[1]}`, x: -5, y: 4, radius: 0.4, label: soldGoods[1], good: soldGoods[1] },
-    { id: "goodsApproach", x: -6, y: 5, radius: 2, label: "Crates with goods" }
+    ...baseZones,
+    ...goodZones,
+    { id: "goodsApproach", x: -6.5, y: 5, radius: 3, label: "Crates with goods" }
   ];
 }
 
@@ -114,6 +138,7 @@ class AmbientManager {
     this.context = context;
     this.buffers = new Map();
     this.active = new Map();
+    this.requestIds = new Map();
     this.master = this.context.createGain();
     this.master.gain.value = 0.8;
     this.master.connect(this.context.destination);
@@ -167,12 +192,17 @@ class AmbientManager {
     if (!path) {
       return;
     }
+    const requestId = (this.requestIds.get(key) || 0) + 1;
+    this.requestIds.set(key, requestId);
     const activeTrack = this.active.get(key);
     if (activeTrack && activeTrack.path === path) {
       this.setGain(key, gainValue, 0.1);
       return;
     }
     const buffer = await this.load(path);
+    if (this.requestIds.get(key) !== requestId) {
+      return;
+    }
     if (!buffer) {
       return;
     }
@@ -194,6 +224,8 @@ class AmbientManager {
   }
 
   async crossfade(key, path, targetGain = 0.45, time = 1.2) {
+    const requestId = (this.requestIds.get(key) || 0) + 1;
+    this.requestIds.set(key, requestId);
     const oldTrack = this.active.get(key);
     if (oldTrack && oldTrack.path === path) {
       this.setGain(key, targetGain, Math.max(0.05, time * 0.5));
@@ -201,6 +233,9 @@ class AmbientManager {
     }
 
     const buffer = await this.load(path);
+    if (this.requestIds.get(key) !== requestId) {
+      return;
+    }
     if (!buffer) {
       return;
     }
@@ -239,6 +274,7 @@ class AmbientManager {
   }
 
   stop(key) {
+    this.requestIds.set(key, (this.requestIds.get(key) || 0) + 1);
     const track = this.active.get(key);
     if (!track) {
       return;
@@ -268,7 +304,7 @@ class FootstepManager {
     this.master.gain.linearRampToValueAtTime(this.clamp(value, 0, 1), now + time);
   }
 
-  async playSample(path, gainValue = 0.14, minIntervalMs = 170) {
+  async playSample(path, gainValue = 0.22, minIntervalMs = 170) {
     const nowMs = performance.now();
     if (nowMs - this.lastStepAt < minIntervalMs) {
       return true;
@@ -370,6 +406,7 @@ class CaribbeanDanger {
     this.menuItems = [];
     this.activeSaveSlot = 1;
     this.hasAudioLoadWarning = false;
+    this.ambienceAvailability = new Map();
     this.currentShipAmbiencePath = null;
     this.lastZoneKey = null;
     this.lastNamedZone = {
@@ -447,6 +484,7 @@ class CaribbeanDanger {
         }
       },
       market: this.createMarketState(),
+      harborFreshCrates: {},
       prompts: {
         reachedFiveVpPromptShown: false
       }
@@ -602,6 +640,7 @@ class CaribbeanDanger {
     this.combatManager = new CombatManager(this.audioContext, this.ambientManager);
     this.footstepManager = new FootstepManager(this.audioContext, (path) => this.ambientManager.load(path));
 
+    await this.preloadHarborAmbience(this.state.location.currentHarbor);
     await this.updateShipAmbienceForLocation();
     await this.updateAmbienceForLocation();
 
@@ -738,6 +777,9 @@ class CaribbeanDanger {
     }
 
     this.state = data;
+    if (!this.state.harborFreshCrates) {
+      this.state.harborFreshCrates = {};
+    }
     if (!this.state.location.shipLevel) {
       this.state.location.shipLevel = "deck";
     }
@@ -755,6 +797,7 @@ class CaribbeanDanger {
     this.ui.goodsPanel.classList.remove("hidden");
 
     await this.ensureAudioSafe();
+  await this.preloadHarborAmbience(this.state.location.currentHarbor);
     this.updateZone();
     this.updateStatus();
     this.updateGoodsPanel();
@@ -799,14 +842,14 @@ class CaribbeanDanger {
         this.updateStatus();
         this.updateGoodsPanel();
         this.updateShipAmbienceForLocation();
-        await this.playFootstep("plank");
+        this.playFootstep("plank");
       } else if (this.state.location.shipLevel === "hold" && this.state.location.x === 3 && this.state.location.y < 11) {
         this.state.location.y += 1;
         this.updateZone();
         this.updateStatus();
         this.updateGoodsPanel();
         this.updateShipAmbienceForLocation();
-        await this.playFootstep("plank");
+        this.playFootstep("plank");
         if (this.state.location.y === 11) {
           this.announce("cargo hold");
         }
@@ -821,7 +864,7 @@ class CaribbeanDanger {
         this.updateStatus();
         this.updateGoodsPanel();
         this.updateShipAmbienceForLocation();
-        await this.playFootstep("plank");
+        this.playFootstep("plank");
       } else if (
         this.state.location.shipLevel === "hold"
         && this.state.location.x === 3
@@ -835,7 +878,7 @@ class CaribbeanDanger {
         this.updateStatus();
         this.updateGoodsPanel();
         this.updateShipAmbienceForLocation();
-        await this.playFootstep("plank");
+        this.playFootstep("plank");
         this.announce("main deck");
       }
       return;
@@ -843,10 +886,10 @@ class CaribbeanDanger {
 
     const delta = { x: 0, y: 0 };
     if (key === "arrowup") {
-      delta.y -= 1;
+      delta.y += 1;
     }
     if (key === "arrowdown") {
-      delta.y += 1;
+      delta.y -= 1;
     }
     if (key === "arrowleft") {
       delta.x -= 1;
@@ -871,7 +914,7 @@ class CaribbeanDanger {
     const movingNorth = delta.y < 0;
 
     const bounds = this.state.location.scene === "harbor"
-      ? { minX: -25, maxX: 24, minY: -25, maxY: 24 }
+      ? { minX: -80, maxX: 80, minY: -80, maxY: 80 }
       : (this.state.location.shipLevel === "hold"
         ? { minX: 0, maxX: 3, minY: 8, maxY: 11 }
         : { minX: 0, maxX: 3, minY: 0, maxY: 11 });
@@ -894,9 +937,7 @@ class CaribbeanDanger {
       return;
     }
 
-    const harborData = HARBORS[this.state.location.currentHarbor];
-    const atHarborDock = this.state.location.scene === "harbor"
-      && this.distance(this.state.location, harborData.dock) <= 2.05;
+    const atHarborDock = this.isAtPlayerBoardingDock();
 
     if (
       atHarborDock
@@ -911,7 +952,7 @@ class CaribbeanDanger {
       this.updateStatus();
       this.updateGoodsPanel();
       this.updateShipAmbienceForLocation();
-      await this.playFootstep("plank");
+      this.playFootstep("plank");
       this.log("You return to your ship.");
       return;
     }
@@ -935,12 +976,12 @@ class CaribbeanDanger {
     const shipStepSurface = this.state.location.scene === "ship"
       ? ((previousShipY >= 8 || this.state.location.y >= 8) ? "plank" : "deck")
       : null;
-    await this.playFootstep(shipStepSurface);
+    this.playFootstep(shipStepSurface);
   }
 
   updateZone() {
     const zones = this.state.location.scene === "harbor"
-      ? getHarborZones(this.state.location.currentHarbor)
+      ? getHarborZones(this.state.location.currentHarbor, this.state.harborFreshCrates)
       : getShipZones(this.state.location.shipLevel);
     let nearest = null;
     for (const zone of zones) {
@@ -1004,8 +1045,7 @@ class CaribbeanDanger {
   interactWithZone() {
     const zone = this.state.location.zone;
     const harborData = HARBORS[this.state.location.currentHarbor];
-    const atHarborDock = this.state.location.scene === "harbor"
-      && this.distance(this.state.location, harborData.dock) <= 2.05;
+    const atHarborDock = this.isAtPlayerBoardingDock();
 
     if (this.state.location.scene === "ship" && zone === "gangplank" && !this.state.sea.inProgress) {
       this.state.location.scene = "harbor";
@@ -1056,7 +1096,7 @@ class CaribbeanDanger {
     }
 
     if (this.state.location.scene === "harbor" && this.state.location.zoneData && this.state.location.zoneData.good) {
-      this.loadGoodFromCrates(this.state.location.zoneData.good);
+      this.interactWithGoodCrate(this.state.location.zoneData);
       return;
     }
 
@@ -1066,7 +1106,8 @@ class CaribbeanDanger {
         return;
       }
 
-      this.openTradePanel();
+      this.log("Bring cargo ashore and sell it at the crate tile for that specific good.");
+      this.announce("Bring cargo ashore to the crate tile for that specific good.");
     }
   }
 
@@ -1086,18 +1127,11 @@ class CaribbeanDanger {
       `<strong>Sold Here:</strong> ${soldGoods.join(", ")}<br>`,
       `<strong>Cargo Capacity:</strong> ${cargoLoad} / ${cargoCap} (${cargoSpace} free)<br>`,
       `<strong>Loading:</strong> Go to the crates with the specific good.<br>`,
+      `<strong>Selling:</strong> Move to the specific good crate the harbor needs.<br>`,
       `<strong>Special Event:</strong> ${this.state.specialEvent || "none"}`
     ].join("");
 
     this.ui.tradeActions.innerHTML = "";
-
-    GOODS.forEach((good) => {
-      const qty = this.state.player.cargo[good];
-      if (qty > 0) {
-        const sellPrice = this.calculateSellPrice(harbor, good);
-        this.ui.tradeActions.appendChild(this.makeOptionRow(`Sell ${good} (${sellPrice} gold)`, () => this.sellGood(good), false));
-      }
-    });
 
     this.ui.tradeActions.appendChild(this.makeOptionRow("Upgrade cargo hold (small +2 capacity, costs 2 VP)", () => this.buyCargoUpgrade("small"), false));
     this.ui.tradeActions.appendChild(this.makeOptionRow("Upgrade cargo hold (large +4 capacity, costs 3 VP)", () => this.buyCargoUpgrade("large"), false));
@@ -1145,6 +1179,19 @@ class CaribbeanDanger {
     this.updateStatus();
   }
 
+  interactWithGoodCrate(zone) {
+    if (!zone || !zone.good) {
+      return;
+    }
+
+    if (zone.sellsHere) {
+      this.loadGoodFromCrates(zone.good);
+      return;
+    }
+
+    this.sellGoodFromCrate(zone.good);
+  }
+
   loadGoodFromCrates(good) {
     const harbor = this.state.location.currentHarbor;
     if (!HARBORS[harbor].soldGoods.includes(good)) {
@@ -1172,6 +1219,7 @@ class CaribbeanDanger {
     }
 
     this.pendingLoadSelection = {
+      action: "buy",
       good,
       harbor,
       price,
@@ -1182,6 +1230,29 @@ class CaribbeanDanger {
     this.announceHint(`Loading ${good} crates. Use up and down arrows to choose how many to load, from 1 to ${maxQuantity}. Enter confirms. Escape cancels.`);
     this.announce(`${good} crates. ${this.pendingLoadSelection.quantity} selected of ${maxQuantity}.`);
     this.log(`Loading ${good} crates. Choose quantity with up and down arrows.`);
+  }
+
+  sellGoodFromCrate(good) {
+    const quantityOnHand = this.state.player.cargo[good];
+    if (quantityOnHand <= 0) {
+      this.log(`Empty ${good} crate. You have 0 ${good} crates on hand.`);
+      this.announce(`Empty ${good} crate. You have 0 ${good} crates on hand.`);
+      return;
+    }
+
+    const harbor = this.state.location.currentHarbor;
+    this.pendingLoadSelection = {
+      action: "sell",
+      good,
+      harbor,
+      price: this.calculateSellPrice(harbor, good),
+      maxQuantity: quantityOnHand,
+      quantity: 1
+    };
+
+    this.announceHint(`Selling ${good} crates. You have ${quantityOnHand} on hand. Use up and down arrows to choose how many to sell. Enter confirms. Escape cancels.`);
+    this.announce(`Empty ${good} crate. ${quantityOnHand} ${good} crates on hand. 1 selected to sell.`);
+    this.log(`Empty ${good} crate. You have ${quantityOnHand} ${good} crates on hand. Choose how many to sell.`);
   }
 
   adjustLoadSelection(delta) {
@@ -1200,6 +1271,12 @@ class CaribbeanDanger {
     }
 
     const selection = this.pendingLoadSelection;
+
+    if (selection.action === "sell") {
+      this.completeSellSelection(selection);
+      return;
+    }
+
     const totalPrice = selection.price * selection.quantity;
 
     if (this.state.player.gold < totalPrice) {
@@ -1214,6 +1291,34 @@ class CaribbeanDanger {
 
     this.log(`Loaded ${selection.quantity} ${selection.good} for ${totalPrice} gold.`);
     this.announce(`Loaded ${selection.quantity} ${selection.good}.`);
+    this.updateStatus();
+    this.updateGoodsPanel();
+    this.updateZone();
+  }
+
+  completeSellSelection(selection) {
+    const totalPrice = selection.price * selection.quantity;
+    const vpGainPerCrate = Math.max(0, Math.floor((selection.price - BASE_PRICES[selection.good]) / 220));
+    const totalVpGain = vpGainPerCrate * selection.quantity;
+
+    this.state.player.cargo[selection.good] -= selection.quantity;
+    this.state.player.gold += totalPrice;
+    this.markFreshCrate(selection.harbor, selection.good);
+    this.pendingLoadSelection = null;
+
+    if (totalVpGain > 0) {
+      this.state.player.victoryPoints += totalVpGain;
+      this.log(`Earned ${totalVpGain} victory point${totalVpGain > 1 ? "s" : ""} from profitable trade.`);
+    }
+
+    this.log(`${selection.good} sold for ${totalPrice} gold.`);
+    this.announce(`Sold ${selection.quantity} ${selection.good}.`);
+
+    if (!this.state.prompts.reachedFiveVpPromptShown && this.state.player.victoryPoints >= 5) {
+      this.state.prompts.reachedFiveVpPromptShown = true;
+      this.askContinueAtFiveVp();
+    }
+
     this.updateStatus();
     this.updateGoodsPanel();
     this.updateZone();
@@ -1302,6 +1407,7 @@ class CaribbeanDanger {
 
   beginVoyage(destination) {
     const from = this.state.location.currentHarbor;
+    this.clearFreshCratesForHarbor(from);
     const miles = this.routeDistance(from, destination);
     const speedKnots = this.computeVoyageSpeed();
     const travelSeconds = speedKnots > 0 ? miles / speedKnots : miles;
@@ -1407,6 +1513,7 @@ class CaribbeanDanger {
 
     this.log(`Arrived at ${to}.`);
     this.speakAndLog(`Arrived at ${to}.`);
+    this.preloadHarborAmbience(to);
     this.updateStatus();
     this.updateZone();
     this.updateGoodsPanel();
@@ -1558,7 +1665,7 @@ class CaribbeanDanger {
         return "Crates with goods";
       }
       if (this.state.location.zoneData && this.state.location.zoneData.good) {
-        return `${this.state.location.zoneData.good} crates`;
+        return this.state.location.zoneData.label || `${this.state.location.zoneData.good} crate`;
       }
       return this.state.location.zone === "open" ? null : (this.state.location.zoneLabel || null);
     }
@@ -1588,10 +1695,10 @@ class CaribbeanDanger {
       if (zone === "goodsApproach") {
         return "Crates with goods";
       }
-      const harborZones = getHarborZones(this.state.location.currentHarbor);
+      const harborZones = getHarborZones(this.state.location.currentHarbor, this.state.harborFreshCrates);
       const previousZone = harborZones.find((item) => item.id === zone);
       if (previousZone && previousZone.good) {
-        return `${previousZone.good} crates`;
+        return previousZone.label || `${previousZone.good} crate`;
       }
       return previousZone ? previousZone.label : null;
     }
@@ -1694,9 +1801,12 @@ class CaribbeanDanger {
     }
 
     if (this.state.location.scene === "harbor") {
-      const isTownArea = this.state.location.zone === "town" || this.state.location.zone === "merchant" || this.state.location.zone === "tavern";
-      if (isTownArea && harbor === "San Juan") {
-        await this.ambientManager.crossfade("world", data.townAmbience, 0.34, 1.1);
+      this.ambientManager.stop("ship");
+      this.ambientManager.stop("ship-hold");
+      const isTownArea = this.isInTownApproach() || this.state.location.zone === "merchant" || this.state.location.zone === "tavern";
+      const townAmbience = await this.resolveTownAmbienceForHarbor(harbor);
+      if (isTownArea && townAmbience) {
+        await this.ambientManager.crossfade("world", townAmbience, 0.52, 0.75);
       } else {
         await this.ambientManager.crossfade("world", data.harborAmbience, 0.3, 1.1);
       }
@@ -1748,6 +1858,7 @@ class CaribbeanDanger {
     const pick = (min, max) => Math.floor(this.rand(min, max));
     let path;
     let minIntervalMs = 170;
+    let gainValue = 0.22;
 
     if (surface === "deck") {
       path = `sounds/steps/main deck/main deck${pick(1, 5)}.wav`;
@@ -1766,10 +1877,10 @@ class CaribbeanDanger {
       minIntervalMs = 185;
     }
 
-    let played = await this.footstepManager.playSample(path, 0.14, minIntervalMs);
+    let played = await this.footstepManager.playSample(path, gainValue, minIntervalMs);
     if (!played && surface === "grass") {
       path = `sounds/steps/concrete3/concretestep${pick(1, 9)}.ogg`;
-      played = await this.footstepManager.playSample(path, 0.14, 185);
+      played = await this.footstepManager.playSample(path, gainValue, Math.max(185, minIntervalMs));
     }
     if (!played) {
       if (!this.hasAudioLoadWarning) {
@@ -1785,8 +1896,8 @@ class CaribbeanDanger {
       return this.state.location.shipLevel === "hold" ? "plank" : "deck";
     }
 
-    // Harbor rule: only the designated town zone is concrete; all other harbor tiles are sand.
-    if (this.state.location.zone === "town") {
+    // Harbor rule: town approach coordinates use concrete; other harbor tiles are sand.
+    if (this.isInTownApproach()) {
       return "concrete";
     }
 
@@ -1910,7 +2021,7 @@ class CaribbeanDanger {
     const now = performance.now();
     const inMenu = this.state.mode === "menu";
     const inPanel = this.state.mode === "playing" && (this.state.inPanel === "trade" || this.state.inPanel === "sail" || this.state.inPanel === "save");
-    const intervalMs = (inMenu || inPanel) ? 105 : 120;
+    const intervalMs = (inMenu || inPanel) ? 85 : 90;
 
     if (!isRepeat) {
       this.arrowKeyTimes[key] = now;
@@ -2053,6 +2164,107 @@ class CaribbeanDanger {
       return dx > 0 ? "East" : "West";
     }
     return dy > 0 ? "North" : "South";
+  }
+
+  isAtPlayerBoardingDock() {
+    if (this.state.location.scene !== "harbor") {
+      return false;
+    }
+    const { x, y } = this.state.location;
+    return y === 8 && x >= 0 && x <= 8;
+  }
+
+  isInTownApproach() {
+    if (this.state.location.scene !== "harbor") {
+      return false;
+    }
+
+    const townZone = HARBOR_COMMON_ZONES.find((zone) => zone.id === "town");
+    if (!townZone) {
+      return false;
+    }
+
+    if (townZone.box) {
+      return this.state.location.x >= townZone.box.minX
+        && this.state.location.x <= townZone.box.maxX
+        && this.state.location.y >= townZone.box.minY
+        && this.state.location.y <= townZone.box.maxY;
+    }
+
+    if (townZone.radius) {
+      return this.distance(this.state.location, townZone) <= townZone.radius;
+    }
+
+    return false;
+  }
+
+  markFreshCrate(harbor, good) {
+    if (!this.state.harborFreshCrates) {
+      this.state.harborFreshCrates = {};
+    }
+    if (!this.state.harborFreshCrates[harbor]) {
+      this.state.harborFreshCrates[harbor] = {};
+    }
+    this.state.harborFreshCrates[harbor][good] = true;
+  }
+
+  clearFreshCratesForHarbor(harbor) {
+    if (!this.state.harborFreshCrates) {
+      this.state.harborFreshCrates = {};
+    }
+    this.state.harborFreshCrates[harbor] = {};
+  }
+
+  getTownAmbienceForHarbor(harbor) {
+    const data = HARBORS[harbor];
+    if (!data) {
+      return null;
+    }
+
+    if (data.townAmbience) {
+      return data.townAmbience;
+    }
+
+    return `sounds/harbors/town_${harbor.toLowerCase().replace(/\s+/g, "_")}.wav`;
+  }
+
+  async resolveTownAmbienceForHarbor(harbor) {
+    if (!this.ambientManager) {
+      return null;
+    }
+
+    const path = this.getTownAmbienceForHarbor(harbor);
+    if (!path) {
+      return null;
+    }
+
+    if (this.ambienceAvailability.has(path)) {
+      return this.ambienceAvailability.get(path) ? path : null;
+    }
+
+    const buffer = await this.ambientManager.load(path);
+    const available = Boolean(buffer);
+    this.ambienceAvailability.set(path, available);
+    return available ? path : null;
+  }
+
+  async preloadHarborAmbience(harbor) {
+    if (!this.ambientManager) {
+      return;
+    }
+
+    const data = HARBORS[harbor];
+    if (!data) {
+      return;
+    }
+
+    const loadRequests = [this.ambientManager.load(data.harborAmbience)];
+    const townAmbiencePath = this.getTownAmbienceForHarbor(harbor);
+    if (townAmbiencePath) {
+      loadRequests.push(this.resolveTownAmbienceForHarbor(harbor));
+    }
+
+    await Promise.allSettled(loadRequests);
   }
 
   distance(a, b) {
